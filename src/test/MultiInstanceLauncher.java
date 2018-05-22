@@ -147,6 +147,7 @@ public class MultiInstanceLauncher {
 	}
 	
 	private void createKeyPair() {
+		System.out.print("Creating Key Pair... ");
 		CreateKeyPairRequest createKeyPairRequest = new CreateKeyPairRequest();
 		createKeyPairRequest.withKeyName(newKeyName);
 
@@ -155,10 +156,12 @@ public class MultiInstanceLauncher {
 		KeyPair keyPair = createKeyPairResult.getKeyPair();
 		String privateKey = keyPair.getKeyMaterial();
 		
+		System.out.println("done");
 		System.out.println(privateKey);
 	}
     
 	private void runInstances() {
+		System.out.print("Running Instances... ");
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 		runInstancesRequest.withImageId(amiId)
 		                   .withInstanceType(instanceType)
@@ -168,6 +171,7 @@ public class MultiInstanceLauncher {
 		                   .withSecurityGroups( getIds(securityGroups) );
 				
 		RunInstancesResult result = ec2.runInstances(runInstancesRequest);
+		System.out.println("done");
 	}
 	
 	private List<String> getIds(List<GroupIdentifier> securityGroups) {
