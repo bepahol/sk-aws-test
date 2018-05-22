@@ -1,9 +1,12 @@
-package test;
+package com.ms.silverking.aws;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
@@ -48,7 +51,6 @@ public class MultiInstanceLauncher {
 //		addSecurityGroupToLaunchInstance();
 		createKeyPair();
 		runInstances();
-//		launchInstance.withSecurityGroups(arg0)
 	}
 	
 	private void createSecurityGroup() {
@@ -157,6 +159,30 @@ public class MultiInstanceLauncher {
 		String privateKey = keyPair.getKeyMaterial();
 		
 		System.out.println("done");
+		
+		System.out.print("Writing to ~/.ssh/id_rsa... ");
+//		boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+//		ProcessBuilder builder = new ProcessBuilder();
+//		if (isWindows) {
+//			builder.command("cmd.exe", "/c", "echo " + privateKey + " >> .ssh/id_rsa");
+//		} else {
+//			builder.command("sh", "-c", "echo " + privateKey + " >> .ssh/id_rsa");
+//		}
+//	    File f = new File(System.getProperty("user.home"));
+//		builder.directory(f);
+//		Process process;
+//		try {
+//			process = builder.start();
+//			int exitCode = process.waitFor();
+//			assert exitCode == 0;
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		System.out.println("done");
 		System.out.println(privateKey);
 	}
     
@@ -168,23 +194,25 @@ public class MultiInstanceLauncher {
 		                   .withMinCount(1)
 		                   .withMaxCount(1)
 		                   .withKeyName(newKeyName)
-		                   .withSecurityGroups( getIds(securityGroups) );
+		                   .withSecurityGroups( getNames(securityGroups) );
 				
 		RunInstancesResult result = ec2.runInstances(runInstancesRequest);
 		System.out.println("done");
 	}
 	
-	private List<String> getIds(List<GroupIdentifier> securityGroups) {
-		List<String> ids = new ArrayList<>();
+	private List<String> getNames(List<GroupIdentifier> securityGroups) {
+		List<String> names = new ArrayList<>();
+		
 		for (GroupIdentifier group : securityGroups) {
-			ids.add(group.getGroupId());
+			names.add(group.getGroupName());
 		}
-		return ids;
+		
+		return names;
 	}
 	
     public static void main(String[] args) throws Exception {
     	InetAddress ip = InetAddress.getLocalHost();
-        System.out.println("IP of my system is := "+ip.getHostAddress());
+        System.out.println("ip = "+ip.getHostAddress());
         
         MultiInstanceLauncher launcher = new MultiInstanceLauncher(ip);
         launcher.run();

@@ -1,4 +1,4 @@
-package test;
+package com.ms.silverking.aws;
 
 import java.util.HashSet;
 import java.util.List;
