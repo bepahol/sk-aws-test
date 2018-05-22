@@ -121,8 +121,10 @@ public class MultiInstanceLauncher {
 	}
 	
 	private boolean isLaunchInstance(Instance instance) {
-		return isRunning(instance) && instance.getImageId().equals("ami-b77b06cf");
-//		return isRunning(instance) && ipMatchesThisMachine(instance);				
+		if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
+			return isRunning(instance) && instance.getImageId().equals("ami-b77b06cf");
+		else
+			return isRunning(instance) && ipMatchesThisMachine(instance);				
 	}
 	
 	private boolean isRunning(Instance instance) {
