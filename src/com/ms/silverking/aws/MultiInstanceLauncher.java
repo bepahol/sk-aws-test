@@ -29,6 +29,7 @@ import com.amazonaws.services.ec2.model.UserIdGroupPair;
 public class MultiInstanceLauncher {
 
 	private final InetAddress ip;
+	private final int numInstances;
 	private final AmazonEC2 ec2;
 	
 	private Instance launchInstance;
@@ -40,8 +41,9 @@ public class MultiInstanceLauncher {
 	private static final String newKeyName = "sk_key";
 	private static final String newSecurityGroupName = "sk_instance";
 	
-	public MultiInstanceLauncher(InetAddress ip) {
+	public MultiInstanceLauncher(InetAddress ip, int numInstances) {
 		this.ip = ip;
+		this.numInstances = numInstances;
 		ec2 = AmazonEC2ClientBuilder.defaultClient();
 	}
 	
@@ -192,7 +194,7 @@ public class MultiInstanceLauncher {
 		runInstancesRequest.withImageId(amiId)
 		                   .withInstanceType(instanceType)
 		                   .withMinCount(1)
-		                   .withMaxCount(1)
+		                   .withMaxCount(numInstances)
 		                   .withKeyName(newKeyName)
 		                   .withSecurityGroups( getNames(securityGroups) );
 				
@@ -214,7 +216,15 @@ public class MultiInstanceLauncher {
     	InetAddress ip = InetAddress.getLocalHost();
         System.out.println("ip = "+ip.getHostAddress());
         
-        MultiInstanceLauncher launcher = new MultiInstanceLauncher(ip);
+        if (args.length == 0)
+        	throw new RuntimeException("We need to know how many instances to start");
+        
+        int numInstances = Integer.valueOf(args[0]);
+        int nonLaunchInstances = numInstances - 1;
+        if (nonLaunchInstances <= 0)
+        	throw new RuntimeException("numInstances needs to be > 1");
+        
+        MultiInstanceLauncher launcher = new MultiInstanceLauncher(ip, nonLaunchInstances);
         launcher.run();
 	}
 
