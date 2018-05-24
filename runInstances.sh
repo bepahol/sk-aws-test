@@ -2,6 +2,7 @@
 
 if [[ -z $1 ]]; then
     echo "Please pass in <numInstances>"
+    exit
 fi
 
 file_path=com/ms/silverking/aws/MultiInstanceLauncher
