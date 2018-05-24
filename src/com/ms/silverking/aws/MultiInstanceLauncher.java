@@ -222,6 +222,9 @@ public class MultiInstanceLauncher {
 	
 	private void writeToFile(String filename, String content) {
 		File file = new File(filename);
+		file.setExecutable(false);
+		file.setReadable(true);
+		file.setWritable(true);
 		  
 		try {
 			file.createNewFile();
