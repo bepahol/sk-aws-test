@@ -39,12 +39,12 @@ public class MultiInstanceLauncher {
 	private String instanceType;
 	private String keyPairName;
 	private List<GroupIdentifier> securityGroups;
-	
-	private String privateKey;
+
 	private String privateKeyFilename;
+	private String privateKey;
 	private String nonLaunchMachinesIpList;
 	
-	private static final String newKeyName = "sk_key";
+	private static final String newKeyName           = "sk_key";
 	private static final String newSecurityGroupName = "sk_instance";
 	
 	private Reservation workerInstances;
@@ -54,22 +54,23 @@ public class MultiInstanceLauncher {
 	
 	private boolean debugPrint = false;
 	
-	public MultiInstanceLauncher(InetAddress ip, int numInstances) {
+	public MultiInstanceLauncher(InetAddress ip, int numInstances, AmazonEC2 ec2) {
 		this.ip = ip;
 		this.numInstances = numInstances;
+		this.ec2 = ec2;
+		
 		privateKeyFilename      = userHome + "/.ssh/id_rsa";
 		nonLaunchMachinesIpList = userHome + "/SilverKing/build/aws/multi_nonlaunch_machines_list.txt";
-		ec2 = AmazonEC2ClientBuilder.defaultClient();
 	}
 	
 	public void run() {
-		setLaunchInstance();
+//		setLaunchInstance();
 //		createSecurityGroup();
 //		addSecurityGroupToLaunchInstance();
 		createKeyPair();
 		createPrivateKeyFile();
-		runInstances();
-		createIpListFile();
+//		runInstances();
+//		createIpListFile();
 	}
 	
 	private void createSecurityGroup() {
@@ -301,9 +302,6 @@ public class MultiInstanceLauncher {
 	}
 	
     public static void main(String[] args) throws Exception {
-    	InetAddress ip = InetAddress.getLocalHost();
-        System.out.println("ip = "+ip.getHostAddress());
-        
         if (args.length == 0)
         	throw new RuntimeException("We need to know how many instances to start. Please pass in <numberOfInstances>");
         
@@ -312,7 +310,9 @@ public class MultiInstanceLauncher {
         if (nonLaunchInstances <= 0)
         	throw new RuntimeException("numberOfInstances needs to be > 1");
         
-        MultiInstanceLauncher launcher = new MultiInstanceLauncher(ip, nonLaunchInstances);
+        System.out.println("Attempting to launch " + nonLaunchInstances + " instances, in addition to this instance, for a total of " + numInstances);
+    	InetAddress ip = InetAddress.getLocalHost();
+        MultiInstanceLauncher launcher = new MultiInstanceLauncher(ip, nonLaunchInstances, AmazonEC2ClientBuilder.defaultClient());
         launcher.run();
 	}
 
