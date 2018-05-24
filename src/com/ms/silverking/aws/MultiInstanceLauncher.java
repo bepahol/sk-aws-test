@@ -223,10 +223,6 @@ public class MultiInstanceLauncher {
 	
 	private void writeToFile(String filename, String content) {
 		File file = new File(filename);
-		  
-		System.out.println("Is Execute allow : " + file.canExecute());
-		System.out.println("Is Write allow : " +   file.canWrite());
-		System.out.println("Is Read allow : " +    file.canRead());
 		
 	    try {
 			file.createNewFile();
@@ -237,10 +233,19 @@ public class MultiInstanceLauncher {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+	    // needs to be done in this order, b/c everyone else wipes out all permissions (including owner)...
+	    // everyone else
+		file.setExecutable(false, false);
+		file.setReadable(  false, false);
+		file.setWritable(  false, false);
+
+		// owner
 		file.setExecutable(false);
-		file.setReadable(false);
-		file.setWritable(false);
-		System.out.println("Is Execute allow : " + file.canExecute());
+		file.setReadable(true);
+		file.setWritable(true);
+		
+	    System.out.println("Is Execute allow : " + file.canExecute());
 		System.out.println("Is Write allow : " +   file.canWrite());
 		System.out.println("Is Read allow : " +    file.canRead());
 	}
