@@ -294,7 +294,7 @@ public class MultiInstanceLauncher {
 			}
 		}
 		
-		printDone(String.join(newLine, getIps(workerInstances)));
+		printDone(String.join(", ", getIps(workerInstances)));
 	}
 	
 	private List<String> getNames(List<GroupIdentifier> securityGroups) {
