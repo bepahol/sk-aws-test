@@ -294,6 +294,13 @@ public class MultiInstanceLauncher {
 			}
 		}
 		
+		try {
+			Thread.sleep(60_000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		printDone(String.join(", ", getIps(workerInstances)));
 	}
 	
