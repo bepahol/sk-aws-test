@@ -69,7 +69,8 @@ public class MultiInstanceLauncher {
 //		addSecurityGroupToLaunchInstance();
 		createKeyPair();
 		createPrivateKeyFile();
-		runInstances();
+		createAndRunNewInstances();
+		waitForInstancesToBeRunning();
 		createIpListFile();
 	}
 	
@@ -114,9 +115,8 @@ public class MultiInstanceLauncher {
 		        }
 		    }
 
-		    if (response.getNextToken() == null) {
+		    if (response.getNextToken() == null)
 		        break;
-		    }
 		    
 		    debugPrint("token: " + response.getNextToken());
 		    request.setNextToken(response.getNextToken());
@@ -250,8 +250,8 @@ public class MultiInstanceLauncher {
 //		System.out.println("Is Read allow : " +    file.canRead());
 	}
     
-	private void runInstances() {
-		print("Running Instances");
+	private void createAndRunNewInstances() {
+		print("Creating New Instances");
 		
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest();
 		runInstancesRequest.withImageId(amiId)
@@ -264,44 +264,80 @@ public class MultiInstanceLauncher {
 		RunInstancesResult result = ec2.runInstances(runInstancesRequest);
 		workerInstances = result.getReservation();
 		
-		printDone( getIds(workerInstances) );
+		printDone( String.join(", ", getIds(workerInstances)) );
+	}
+	
+	private void waitForInstancesToBeRunning() {
+		print("Waiting for Instances to be \"Running\"");
+		
+		DescribeInstancesRequest request = new DescribeInstancesRequest();
+		request.withInstanceIds( getIds(workerInstances) );
+		
+		List<String> ips = getIps(workerInstances);
+		while (!ips.isEmpty()) {
+		    DescribeInstancesResult response = ec2.describeInstances(request);
+		    for (Reservation reservation : response.getReservations()) {
+				for (Instance instance : reservation.getInstances()) { 
+//					System.out.println(instance.getState().getName());
+					if (isRunning(instance)) {
+//						System.out.println(instance.getPrivateIpAddress());
+						ips.remove(instance.getPrivateIpAddress());
+					}
+				}
+		    }
+			try {
+//				System.out.println(ips);
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		printDone();
 	}
 	
 	private List<String> getNames(List<GroupIdentifier> securityGroups) {
 		List<String> names = new ArrayList<>();
 		
-		for (GroupIdentifier group : securityGroups) {
+		for (GroupIdentifier group : securityGroups)
 			names.add(group.getGroupName());
-		}
 		
 		return names;
 	}
 	
-	private String getIds(Reservation reservation) {
-		String ids = "";
+	private List<String> getIds(Reservation reservation) {
+		List<String> ids = new ArrayList<>();
 		
-		for (Instance instance : reservation.getInstances()) {
-			ids += instance.getInstanceId() + ", ";
-		}
+		for (Instance instance : reservation.getInstances())
+			ids.add(instance.getInstanceId());
 		
 		return ids;
+	}
+	
+	private List<String> getIps(Reservation reservation) {
+		List<String> ips = new ArrayList<>();
+		
+		for (Instance instance : workerInstances.getInstances())
+			ips.add(instance.getPrivateIpAddress());
+		
+		return ips;
 	}
 	
 	private void createIpListFile() {
 		print("Creating IpList File");
 		
-		String ipList = "";
-		for (Instance instance : workerInstances.getInstances()) {
-			ipList += instance.getPrivateIpAddress() + newLine;
-		}
-		
-		writeToFile(nonLaunchMachinesIpList, ipList);
+		writeToFile(nonLaunchMachinesIpList, String.join(newLine, getIps(workerInstances)));
 		
 		printDone(nonLaunchMachinesIpList);
 	}
 	
 	private void print(String text) {
-		System.out.printf("%-25s ... ", text);
+		System.out.printf("%-38s ... ", text);
+	}
+	
+	private void printDone() {
+		printDone("");
 	}
 	
 	private void printDone(String value) {
