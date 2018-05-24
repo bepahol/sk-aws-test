@@ -327,7 +327,7 @@ public class MultiInstanceLauncher {
 	private void createIpListFile() {
 		print("Creating IpList File");
 		
-		writeToFile(nonLaunchMachinesIpList, String.join(newLine, getIps(workerInstances)));
+		writeToFile(nonLaunchMachinesIpList, String.join(newLine, getIps(workerInstances)) + newLine);
 		
 		printDone(nonLaunchMachinesIpList);
 	}
