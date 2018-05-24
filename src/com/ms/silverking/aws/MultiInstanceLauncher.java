@@ -223,11 +223,12 @@ public class MultiInstanceLauncher {
 	
 	private void writeToFile(String filename, String content) {
 		File file = new File(filename);
-		file.setExecutable(false);
-		file.setReadable(true);
-		file.setWritable(true);
 		  
-		try {
+		System.out.println("Is Execute allow : " + file.canExecute());
+		System.out.println("Is Write allow : " +   file.canWrite());
+		System.out.println("Is Read allow : " +    file.canRead());
+		
+	    try {
 			file.createNewFile();
 			FileWriter writer = new FileWriter(file);
 			writer.write(content);
@@ -236,6 +237,12 @@ public class MultiInstanceLauncher {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		file.setExecutable(false);
+		file.setReadable(false);
+		file.setWritable(false);
+		System.out.println("Is Execute allow : " + file.canExecute());
+		System.out.println("Is Write allow : " +   file.canWrite());
+		System.out.println("Is Read allow : " +    file.canRead());
 	}
     
 	private void runInstances() {
@@ -310,7 +317,7 @@ public class MultiInstanceLauncher {
         if (nonLaunchInstances <= 0)
         	throw new RuntimeException("numberOfInstances needs to be > 1");
         
-        System.out.println("Attempting to launch " + nonLaunchInstances + " instances, in addition to this instance, for a total of " + numInstances);
+        System.out.println("Attempting to launch " + nonLaunchInstances + " new instances, for a total of " + numInstances + " (this instance + those " + nonLaunchInstances + ")");
     	InetAddress ip = InetAddress.getLocalHost();
         MultiInstanceLauncher launcher = new MultiInstanceLauncher(ip, nonLaunchInstances, AmazonEC2ClientBuilder.defaultClient());
         launcher.run();
