@@ -64,13 +64,13 @@ public class MultiInstanceLauncher {
 	}
 	
 	public void run() {
-//		setLaunchInstance();
+		setLaunchInstance();
 //		createSecurityGroup();
 //		addSecurityGroupToLaunchInstance();
 		createKeyPair();
 		createPrivateKeyFile();
-//		runInstances();
-//		createIpListFile();
+		runInstances();
+		createIpListFile();
 	}
 	
 	private void createSecurityGroup() {
@@ -245,9 +245,9 @@ public class MultiInstanceLauncher {
 		file.setReadable(true);
 		file.setWritable(true);
 		
-	    System.out.println("Is Execute allow : " + file.canExecute());
-		System.out.println("Is Write allow : " +   file.canWrite());
-		System.out.println("Is Read allow : " +    file.canRead());
+//	    System.out.println("Is Execute allow : " + file.canExecute());
+//		System.out.println("Is Write allow : " +   file.canWrite());
+//		System.out.println("Is Read allow : " +    file.canRead());
 	}
     
 	private void runInstances() {
