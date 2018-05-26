@@ -308,8 +308,11 @@ public class MultiInstanceLauncher {
 		    for (InstanceStatus status : response.getInstanceStatuses()) {
 		    	if (passedSystemStatusCheck(status.getSystemStatus()) && passedInstanceStatusCheck(status.getInstanceStatus())) {
 		    		Instance instance = getInstance(status.getInstanceId(), workerInstances);
-					System.out.printf("\t%-17s is good%n", instance.getPrivateIpAddress());
-					ips.remove(instance.getPrivateIpAddress());
+		    		String ip = instance.getPrivateIpAddress();
+		    		if (ips.contains(ip)) {	// avoids multiple printing of those that are already good, while waiting for the rest
+						System.out.printf("\t%-17s is good%n", ip);
+						ips.remove(ip);
+		    		}	
 		    	}
 		    }
 
