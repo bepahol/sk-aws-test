@@ -17,10 +17,15 @@ import com.amazonaws.services.ec2.model.CreateSecurityGroupRequest;
 import com.amazonaws.services.ec2.model.CreateSecurityGroupResult;
 import com.amazonaws.services.ec2.model.DeleteKeyPairRequest;
 import com.amazonaws.services.ec2.model.DeleteKeyPairResult;
+import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
+import com.amazonaws.services.ec2.model.DescribeInstanceStatusResult;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.GroupIdentifier;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.InstanceStatus;
+import com.amazonaws.services.ec2.model.InstanceStatusDetails;
+import com.amazonaws.services.ec2.model.InstanceStatusSummary;
 import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.KeyPair;
 import com.amazonaws.services.ec2.model.Reservation;
@@ -54,6 +59,8 @@ public class MultiInstanceLauncher {
 	
 	private boolean debugPrint = false;
 	
+	private long lastMinutePrinted;
+	
 	public MultiInstanceLauncher(InetAddress ip, int numInstances, AmazonEC2 ec2) {
 		this.ip = ip;
 		this.numInstances = numInstances;
@@ -61,6 +68,8 @@ public class MultiInstanceLauncher {
 		
 		privateKeyFilename      = userHome + "/.ssh/id_rsa";
 		nonLaunchMachinesIpList = userHome + "/SilverKing/build/aws/multi_nonlaunch_machines_list.txt";
+		
+		lastMinutePrinted = 0;
 	}
 	
 	public void run() {
@@ -71,6 +80,7 @@ public class MultiInstanceLauncher {
 		createPrivateKeyFile();
 		createAndRunNewInstances();
 		waitForInstancesToBeRunning();
+		waitForInstancesToBeReachable();
 		createIpListFile();
 	}
 	
@@ -142,7 +152,7 @@ public class MultiInstanceLauncher {
 	
 	private boolean isLaunchInstance(Instance instance) {
 		if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
-			return isRunning(instance) && instance.getImageId().equals("ami-b77b06cf");
+			return isRunning(instance) && instance.getImageId().equals("ami-2c4a3354");
 		else
 			return isRunning(instance) && ipMatchesThisMachine(instance);				
 	}
@@ -174,7 +184,7 @@ public class MultiInstanceLauncher {
 	}
 	
 	private void createKeyPair() {
-		print("Creating Key Pair");
+		print("Creating New Key Pair");
 		
 		DeleteKeyPairRequest deleteKeyPairRequest = new DeleteKeyPairRequest();
 		deleteKeyPairRequest.withKeyName(newKeyName);
@@ -193,31 +203,10 @@ public class MultiInstanceLauncher {
 	}
 	
 	private void createPrivateKeyFile() {
-		print("Creating Private Key File");
+		print("Creating New Private Key File");
 		
 		writeToFile(privateKeyFilename, privateKey);
-		 
-//		boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-//		ProcessBuilder builder = new ProcessBuilder();
-//		if (isWindows) {
-//			builder.command("cmd.exe", "/c", "echo " + privateKey + " >> .ssh/id_rsa");
-//		} else {
-//			builder.command("sh", "-c", "echo " + privateKey + " >> .ssh/id_rsa");
-//		}
-//	    File f = new File(System.getProperty("user.home"));
-//		builder.directory(f);
-//		Process process;
-//		try {
-//			process = builder.start();
-//			int exitCode = process.waitFor();
-//			assert exitCode == 0;
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		
 		printDone(privateKeyFilename);
 	}
 	
@@ -234,13 +223,13 @@ public class MultiInstanceLauncher {
 			e.printStackTrace();
 		}
 
-	    // needs to be done in this order, b/c everyone else wipes out all permissions (including owner)...
-	    // everyone else
+	    // needs to be done in this order, b/c "everyone else" wipes out all permissions (including "owner")...
+	    // "everyone else"
 		file.setExecutable(false, false);
 		file.setReadable(  false, false);
 		file.setWritable(  false, false);
 
-		// owner
+		// "owner"
 		file.setExecutable(false);
 		file.setReadable(true);
 		file.setWritable(true);
@@ -268,14 +257,17 @@ public class MultiInstanceLauncher {
 	}
 	
 	private void waitForInstancesToBeRunning() {
-		print("Waiting for Instances to be \"Running\"");
+		print("  Waiting for Instances to be running");
 		
-		DescribeInstancesRequest request = new DescribeInstancesRequest();
-		request.withInstanceIds( getIds(workerInstances) );
-		
+		DescribeInstancesRequest diRequest = new DescribeInstancesRequest();
+		diRequest.withInstanceIds( getIds(workerInstances) );
+
+		long sleepSeconds       = 5;
+		int totalRunTimeSeconds = 2 * 60; 	
+		int retriesCount = 0;
 		List<String> ips = getIps(workerInstances);
 		while (!ips.isEmpty()) {
-		    DescribeInstancesResult response = ec2.describeInstances(request);
+		    DescribeInstancesResult response = ec2.describeInstances(diRequest);
 		    for (Reservation reservation : response.getReservations()) {
 				for (Instance instance : reservation.getInstances()) { 
 //					System.out.println(instance.getState().getName());
@@ -285,23 +277,104 @@ public class MultiInstanceLauncher {
 					}
 				}
 		    }
-			try {
-//				System.out.println(ips);
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		    
+		    if (retriesCount*sleepSeconds > totalRunTimeSeconds)
+		    	throwTimeoutException("running");
+		    
+		    sleep(sleepSeconds);
+		    retriesCount++;
+		    printMinutesElapsed(sleepSeconds, retriesCount);
 		}
-		
-		try {
-			Thread.sleep(60_000);
+
+		lastMinutePrinted = 0;
+		printDone(String.join(", ", getIps(workerInstances)));
+	}
+	
+	private void waitForInstancesToBeReachable() {
+		printNoDot("  Waiting for Instances to be reachable");
+		printNoDot("    be patient, it could take mins");
+
+		DescribeInstanceStatusRequest disRequest = new DescribeInstanceStatusRequest();
+		disRequest.withInstanceIds( getIds(workerInstances) );
+
+		long sleepSeconds       = 15;
+		int totalRunTimeSeconds = 5 * 60; 	
+		int retriesCount = 0;
+		List<String> ips = getIps(workerInstances);
+		while (!ips.isEmpty()) {
+		    DescribeInstanceStatusResult response = ec2.describeInstanceStatus(disRequest);
+		    for (InstanceStatus status : response.getInstanceStatuses()) {
+		    	if (passedSystemStatusCheck(status.getSystemStatus()) && passedInstanceStatusCheck(status.getInstanceStatus())) {
+		    		Instance instance = getInstance(status.getInstanceId(), workerInstances);
+					System.out.printf("\t%-17s is good%n", instance.getPrivateIpAddress());
+					ips.remove(instance.getPrivateIpAddress());
+		    	}
+		    }
+
+		    if (retriesCount*sleepSeconds > totalRunTimeSeconds)
+		    	throwTimeoutException("reachable");
+		    		    
+		    sleep(sleepSeconds);
+		    retriesCount++;
+		    printMinutesElapsed(sleepSeconds, retriesCount);
+		}
+
+		lastMinutePrinted = 0;
+		print("");
+		printDone(String.join(", ", getIps(workerInstances)));
+	}
+	
+	private void throwTimeoutException(String status) {
+    	throw new RuntimeException("instances should have been " + status + " by now...");
+	}
+	
+	private boolean passedSystemStatusCheck(InstanceStatusSummary statusSummary) {
+		return isReachableAndStatusIsOk(statusSummary);
+	}
+	
+	private boolean passedInstanceStatusCheck(InstanceStatusSummary statusSummary) {
+		return isReachableAndStatusIsOk(statusSummary);
+	}
+	
+	private boolean isReachableAndStatusIsOk(InstanceStatusSummary statusSummary) {
+		return reachabilityPassed(statusSummary.getDetails()) && statusIsOk(statusSummary.getStatus());
+	}
+	
+	private boolean reachabilityPassed(List<InstanceStatusDetails> details) {
+		for (InstanceStatusDetails detail : details)
+			if (detail.getName().equals("reachability") && detail.getStatus().equals("passed"))
+				return true;
+
+		return false;
+	}
+	
+	private boolean statusIsOk(String status) {
+		return status.equals("ok");
+	}
+	
+	private void sleep(long seconds) {
+	    try {
+			Thread.sleep(seconds*1_000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	private void printMinutesElapsed(long sleepSeconds, int retries) {
+		long minute = sleepSeconds*retries / 60;
+		if (minute != 0 && minute != lastMinutePrinted) {
+			System.out.println("    - (" + minute + " mins elapsed)");
+			lastMinutePrinted = minute;
+		}
+	}
+	
+	private Instance getInstance(String id, Reservation reservation) {
+		for (Instance instance : reservation.getInstances())
+			if (instance.getInstanceId().equals(id))
+				return instance;
 		
-		printDone(String.join(", ", getIps(workerInstances)));
+		throw new RuntimeException("instance '"+id+"' not found");
 	}
 	
 	private List<String> getNames(List<GroupIdentifier> securityGroups) {
@@ -339,12 +412,17 @@ public class MultiInstanceLauncher {
 		printDone(nonLaunchMachinesIpList);
 	}
 	
-	private void print(String text) {
-		System.out.printf("%-38s ... ", text);
+	private void printNoDot(String text) {
+		printHelper(text, "");
+		System.out.println();
 	}
 	
-	private void printDone() {
-		printDone("");
+	private void print(String text) {
+		printHelper(text, "...");
+	}
+	
+	private void printHelper(String text, String spacer) {
+		System.out.printf("%-39s %-3s ", text, spacer);
 	}
 	
 	private void printDone(String value) {
