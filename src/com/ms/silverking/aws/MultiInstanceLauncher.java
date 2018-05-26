@@ -278,6 +278,9 @@ public class MultiInstanceLauncher {
 				}
 		    }
 		    
+		    if (ips.isEmpty())
+		    	break;
+		    
 		    if (retriesCount*sleepSeconds > totalRunTimeSeconds)
 		    	throwTimeoutException("running");
 		    
@@ -311,6 +314,9 @@ public class MultiInstanceLauncher {
 		    	}
 		    }
 
+		    if (ips.isEmpty())
+		    	break;
+		    
 		    if (retriesCount*sleepSeconds > totalRunTimeSeconds)
 		    	throwTimeoutException("reachable");
 		    		    
