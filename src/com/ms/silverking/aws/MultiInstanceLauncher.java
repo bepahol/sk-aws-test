@@ -262,8 +262,8 @@ public class MultiInstanceLauncher {
 		DescribeInstancesRequest diRequest = new DescribeInstancesRequest();
 		diRequest.withInstanceIds( getIds(workerInstances) );
 
-		long sleepSeconds       = 5;
-		int totalRunTimeSeconds = 2 * 60; 	
+		long sleepSeconds        = 5;
+		long totalRunTimeSeconds = 2 * 60; 	
 		int retriesCount = 0;
 		List<String> ips = getIps(workerInstances);
 		while (!ips.isEmpty()) {
@@ -277,12 +277,11 @@ public class MultiInstanceLauncher {
 					}
 				}
 		    }
-		    
+
 		    if (ips.isEmpty())
 		    	break;
 		    
-		    if (retriesCount*sleepSeconds > totalRunTimeSeconds)
-		    	throwTimeoutException("running");
+		    checkForTimeoutException(sleepSeconds, totalRunTimeSeconds, retriesCount, "running");
 		    
 		    sleep(sleepSeconds);
 		    retriesCount++;
@@ -300,8 +299,8 @@ public class MultiInstanceLauncher {
 		DescribeInstanceStatusRequest disRequest = new DescribeInstanceStatusRequest();
 		disRequest.withInstanceIds( getIds(workerInstances) );
 
-		long sleepSeconds       = 15;
-		int totalRunTimeSeconds = 5 * 60; 	
+		long sleepSeconds        = 15;
+		long totalRunTimeSeconds = 5 * 60; 	
 		int retriesCount = 0;
 		List<String> ips = getIps(workerInstances);
 		while (!ips.isEmpty()) {
@@ -317,8 +316,7 @@ public class MultiInstanceLauncher {
 		    if (ips.isEmpty())
 		    	break;
 		    
-		    if (retriesCount*sleepSeconds > totalRunTimeSeconds)
-		    	throwTimeoutException("reachable");
+		    checkForTimeoutException(sleepSeconds, totalRunTimeSeconds, retriesCount, "reachable");
 		    		    
 		    sleep(sleepSeconds);
 		    retriesCount++;
@@ -328,6 +326,11 @@ public class MultiInstanceLauncher {
 		lastMinutePrinted = 0;
 		print("");
 		printDone(String.join(", ", getIps(workerInstances)));
+	}
+	
+	private void checkForTimeoutException(long sleepSeconds, long totalRunTimeSeconds, int retriesCount, String status) {
+		if (retriesCount*sleepSeconds > totalRunTimeSeconds)
+	    	throwTimeoutException(status);
 	}
 	
 	private void throwTimeoutException(String status) {
@@ -370,7 +373,7 @@ public class MultiInstanceLauncher {
 	private void printMinutesElapsed(long sleepSeconds, int retries) {
 		long minute = sleepSeconds*retries / 60;
 		if (minute != 0 && minute != lastMinutePrinted) {
-			System.out.println("    - (" + minute + " mins elapsed)");
+			System.out.println("      *" + minute + " mins elapsed*");
 			lastMinutePrinted = minute;
 		}
 	}
