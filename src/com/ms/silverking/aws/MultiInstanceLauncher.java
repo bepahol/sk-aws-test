@@ -1,5 +1,16 @@
 package com.ms.silverking.aws;
 
+import static com.ms.silverking.aws.Util.debugPrint;
+import static com.ms.silverking.aws.Util.deleteKeyPair;
+import static com.ms.silverking.aws.Util.getIds;
+import static com.ms.silverking.aws.Util.getIps;
+import static com.ms.silverking.aws.Util.isRunning;
+import static com.ms.silverking.aws.Util.newKeyName;
+import static com.ms.silverking.aws.Util.print;
+import static com.ms.silverking.aws.Util.printDone;
+import static com.ms.silverking.aws.Util.printInstance;
+import static com.ms.silverking.aws.Util.printNoDot;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,8 +26,6 @@ import com.amazonaws.services.ec2.model.CreateKeyPairRequest;
 import com.amazonaws.services.ec2.model.CreateKeyPairResult;
 import com.amazonaws.services.ec2.model.CreateSecurityGroupRequest;
 import com.amazonaws.services.ec2.model.CreateSecurityGroupResult;
-import com.amazonaws.services.ec2.model.DeleteKeyPairRequest;
-import com.amazonaws.services.ec2.model.DeleteKeyPairResult;
 import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
 import com.amazonaws.services.ec2.model.DescribeInstanceStatusResult;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
@@ -49,15 +58,12 @@ public class MultiInstanceLauncher {
 	private String privateKey;
 	private String nonLaunchMachinesIpList;
 	
-	private static final String newKeyName           = "sk_key";
 	private static final String newSecurityGroupName = "sk_instance";
 	
-	private Reservation workerInstances;
+	private List<Instance> workerInstances;
 
 	private static final String userHome = System.getProperty("user.home");
 	private static final String newLine  = System.getProperty("line.separator");
-	
-	private boolean debugPrint = false;
 	
 	private long lastMinutePrinted;
 	
@@ -76,6 +82,7 @@ public class MultiInstanceLauncher {
 		setLaunchInstance();
 //		createSecurityGroup();
 //		addSecurityGroupToLaunchInstance();
+		deleteKeyPair(ec2);
 		createKeyPair();
 		createPrivateKeyFile();
 		createAndRunNewInstances();
@@ -135,30 +142,11 @@ public class MultiInstanceLauncher {
 		throw new RuntimeException("Couldn't find launch instance");
 	}
 	
-	private void printInstance(Instance instance) {
-		if (debugPrint)
-			System.out.printf(
-	                "Found instance with id %s, " +
-	                "AMI %s, " +
-	                "type %s, " +
-	                "state %s " +
-	                "and monitoring state %s%n",
-	                instance.getInstanceId(),
-	                instance.getImageId(),
-	                instance.getInstanceType(),
-	                instance.getState().getName(),
-	                instance.getMonitoring().getState());
-	}
-	
 	private boolean isLaunchInstance(Instance instance) {
 		if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
 			return isRunning(instance) && instance.getImageId().equals("ami-2c4a3354");
 		else
 			return isRunning(instance) && ipMatchesThisMachine(instance);				
-	}
-	
-	private boolean isRunning(Instance instance) {
-		return instance.getState().getName().equals("running");
 	}
 	
 	private boolean ipMatchesThisMachine(Instance instance) {
@@ -185,11 +173,6 @@ public class MultiInstanceLauncher {
 	
 	private void createKeyPair() {
 		print("Creating New Key Pair");
-		
-		DeleteKeyPairRequest deleteKeyPairRequest = new DeleteKeyPairRequest();
-		deleteKeyPairRequest.withKeyName(newKeyName);
-
-		DeleteKeyPairResult deleteKeyPairResult = ec2.deleteKeyPair(deleteKeyPairRequest);
 		
 		CreateKeyPairRequest createKeyPairRequest = new CreateKeyPairRequest();
 		createKeyPairRequest.withKeyName(newKeyName);
@@ -251,7 +234,7 @@ public class MultiInstanceLauncher {
 		                   .withSecurityGroups( getNames(securityGroups) );
 				
 		RunInstancesResult result = ec2.runInstances(runInstancesRequest);
-		workerInstances = result.getReservation();
+		workerInstances = result.getReservation().getInstances();
 		
 		printDone( String.join(", ", getIds(workerInstances)) );
 	}
@@ -381,8 +364,8 @@ public class MultiInstanceLauncher {
 		}
 	}
 	
-	private Instance getInstance(String id, Reservation reservation) {
-		for (Instance instance : reservation.getInstances())
+	private Instance getInstance(String id, List<Instance> instances) {
+		for (Instance instance : instances)
 			if (instance.getInstanceId().equals(id))
 				return instance;
 		
@@ -398,52 +381,12 @@ public class MultiInstanceLauncher {
 		return names;
 	}
 	
-	private List<String> getIds(Reservation reservation) {
-		List<String> ids = new ArrayList<>();
-		
-		for (Instance instance : reservation.getInstances())
-			ids.add(instance.getInstanceId());
-		
-		return ids;
-	}
-	
-	private List<String> getIps(Reservation reservation) {
-		List<String> ips = new ArrayList<>();
-		
-		for (Instance instance : workerInstances.getInstances())
-			ips.add(instance.getPrivateIpAddress());
-		
-		return ips;
-	}
-	
 	private void createIpListFile() {
 		print("Creating IpList File");
 		
 		writeToFile(nonLaunchMachinesIpList, String.join(newLine, getIps(workerInstances)) + newLine);
 		
 		printDone(nonLaunchMachinesIpList);
-	}
-	
-	private void printNoDot(String text) {
-		printHelper(text, "");
-		System.out.println();
-	}
-	
-	private void print(String text) {
-		printHelper(text, "...");
-	}
-	
-	private void printHelper(String text, String spacer) {
-		System.out.printf("%-39s %-3s ", text, spacer);
-	}
-	
-	private void printDone(String value) {
-		System.out.println("done ("+value+")");
-	}
-	
-	private void debugPrint(String text) {
-		if (debugPrint)
-			System.out.println(text);
 	}
 	
     public static void main(String[] args) throws Exception {
