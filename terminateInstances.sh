@@ -1,5 +1,7 @@
 #!/bin/ksh
 
+cd `dirname $0`
+
 file_path=com/ms/silverking/aws/MultiInstanceTerminator
 
 cd src/

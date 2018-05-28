@@ -5,6 +5,8 @@ if [[ -z $1 ]]; then
     exit
 fi
 
+cd `dirname $0`
+
 file_path=com/ms/silverking/aws/MultiInstanceLauncher
 
 cd src/
