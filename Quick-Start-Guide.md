@@ -26,7 +26,7 @@ With that sanity check out of the way, you can start up SilverKing as follows:
 ```
 That's it! SilverKing is up and running. You can run 'ps uxww' to see all three processes.
 
-You can now perform key-value operations using the skc tool ([skc usage](doc/Shell.html)):
+You can now perform key-value operations using the skc tool ([skc usage](docs/Shell.html)):
 ```ksh
 ~/SilverKing/bin/skc -G ~/SilverKing/build/testing -g GC_SK_test    
 skc> h;         # help menu
