@@ -53,6 +53,7 @@ public class MultiInstanceLauncher {
 	private String instanceType;
 	private String keyPairName;
 	private List<GroupIdentifier> securityGroups;
+	private String subnetId;
 
 	private String privateKeyFilename;
 	private String privateKey;
@@ -159,16 +160,18 @@ public class MultiInstanceLauncher {
     	instanceType   = instance.getInstanceType();
     	keyPairName    = instance.getKeyName();
     	securityGroups = instance.getSecurityGroups();
+    	subnetId       = instance.getSubnetId();
     	printDetails();
     	printDone(instance.getInstanceId());
 	}
 	
 	private void printDetails() {
 		debugPrint("set launch instance: " + launchInstance);
-		debugPrint("ami:  " + amiId);
-		debugPrint("type: " + instanceType);
-		debugPrint("kp:   " + keyPairName);
-		debugPrint("sg:   " + securityGroups);
+		debugPrint("ami:    " + amiId);
+		debugPrint("type:   " + instanceType);
+		debugPrint("kp:     " + keyPairName);
+		debugPrint("sg:     " + securityGroups);
+		debugPrint("subnet: " + subnetId);
 	}
 	
 	private void createKeyPair() {
@@ -231,7 +234,8 @@ public class MultiInstanceLauncher {
 		                   .withMinCount(1)
 		                   .withMaxCount(numInstances)
 		                   .withKeyName(newKeyName)
-		                   .withSecurityGroups( getNames(securityGroups) );
+		                   .withSecurityGroups( getNames(securityGroups) )
+		                   .withSubnetId(subnetId);
 				
 		RunInstancesResult result = ec2.runInstances(runInstancesRequest);
 		workerInstances = result.getReservation().getInstances();
