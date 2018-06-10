@@ -1,7 +1,7 @@
 # Quick-start Guide
 ## Running Simple AWS-based Instances
 If you'd like to give SilverKing a try, you can be up and running in minutes using an AWS instance from our template:<br>
-&emsp;[SilverKing AMI](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:visibility=public-images;search=SilverKing;sort=name)<br>
+&emsp;[SilverKing AMI](https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#Images:visibility=public-images;search=SilverKing;sort=name){:target="_blank"}<br>
 &emsp;AMI-Name: SilverKing<br>
 &emsp;Platform: Amazon-Linux<br>
 &emsp;Username: ec2-user<br>
