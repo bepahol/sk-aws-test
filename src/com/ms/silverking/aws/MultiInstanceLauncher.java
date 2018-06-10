@@ -2,7 +2,7 @@ package com.ms.silverking.aws;
 
 import static com.ms.silverking.aws.Util.debugPrint;
 import static com.ms.silverking.aws.Util.deleteKeyPair;
-import static com.ms.silverking.aws.Util.getIds;
+import static com.ms.silverking.aws.Util.getInstanceIds;
 import static com.ms.silverking.aws.Util.getIps;
 import static com.ms.silverking.aws.Util.isRunning;
 import static com.ms.silverking.aws.Util.newKeyName;
@@ -234,21 +234,21 @@ public class MultiInstanceLauncher {
 		                   .withMinCount(1)
 		                   .withMaxCount(numInstances)
 		                   .withKeyName(newKeyName)
-//		               	if you try to use .withSecurityGroups AND .withSubnetId, you will get Exception in thread "main" com.amazonaws.services.ec2.model.AmazonEC2Exception: The parameter groupName cannot be used with the parameter subnet (Service: AmazonEC2; Status Code: 400; Error Code: InvalidParameterCombination; Request ID: a230cc97-c84b-4253-bdf0-874c68759efd)
-//		                   .withSecurityGroups( getNames(securityGroups) )
+		                   .withSecurityGroupIds( getSecurityGroupIds(securityGroups) )	// for some reason this one works and below doesn't
+//		                   .withSecurityGroups( getNames(securityGroups) )	if you try to use .withSecurityGroups AND .withSubnetId, you will get Exception in thread "main" com.amazonaws.services.ec2.model.AmazonEC2Exception: The parameter groupName cannot be used with the parameter subnet (Service: AmazonEC2; Status Code: 400; Error Code: InvalidParameterCombination; Request ID: a230cc97-c84b-4253-bdf0-874c68759efd)
 		                   .withSubnetId(subnetId);
 				
 		RunInstancesResult result = ec2.runInstances(runInstancesRequest);
 		workerInstances = result.getReservation().getInstances();
 		
-		printDone( String.join(", ", getIds(workerInstances)) );
+		printDone( String.join(", ", getInstanceIds(workerInstances)) );
 	}
 	
 	private void waitForInstancesToBeRunning() {
 		print("  Waiting for Instances to be running");
 		
 		DescribeInstancesRequest diRequest = new DescribeInstancesRequest();
-		diRequest.withInstanceIds( getIds(workerInstances) );
+		diRequest.withInstanceIds( getInstanceIds(workerInstances) );
 
 		long sleepSeconds        = 5;
 		long totalRunTimeSeconds = 2 * 60; 	
@@ -285,7 +285,7 @@ public class MultiInstanceLauncher {
 		printNoDot("    be patient, it could take mins");
 
 		DescribeInstanceStatusRequest disRequest = new DescribeInstanceStatusRequest();
-		disRequest.withInstanceIds( getIds(workerInstances) );
+		disRequest.withInstanceIds( getInstanceIds(workerInstances) );
 
 		long sleepSeconds        = 15;
 		long totalRunTimeSeconds = 5 * 60; 	
@@ -297,7 +297,7 @@ public class MultiInstanceLauncher {
 		    	if (passedSystemStatusCheck(status.getSystemStatus()) && passedInstanceStatusCheck(status.getInstanceStatus())) {
 		    		Instance instance = getInstance(status.getInstanceId(), workerInstances);
 		    		String ip = instance.getPrivateIpAddress();
-		    		if (ips.contains(ip)) {	// avoids multiple printing of those that are already good, while waiting for the rest
+		    		if (ips.contains(ip)) {	// avoids multiple printing of those that are already 'good', while waiting for the rest to reach 'good' status
 						System.out.printf("\t%-17s is good%n", ip);
 						ips.remove(ip);
 		    		}	
@@ -377,14 +377,23 @@ public class MultiInstanceLauncher {
 		throw new RuntimeException("instance '"+id+"' not found");
 	}
 	
-	private List<String> getNames(List<GroupIdentifier> securityGroups) {
+	private List<String> getSecurityGroupIds(List<GroupIdentifier> securityGroups) {
 		List<String> names = new ArrayList<>();
 		
 		for (GroupIdentifier group : securityGroups)
-			names.add(group.getGroupName());
+			names.add(group.getGroupId());
 		
 		return names;
 	}
+	
+//	private List<String> getNames(List<GroupIdentifier> securityGroups) {
+//		List<String> names = new ArrayList<>();
+//		
+//		for (GroupIdentifier group : securityGroups)
+//			names.add(group.getGroupName());
+//		
+//		return names;
+//	}
 	
 	private void createIpListFile() {
 		print("Creating IpList File");

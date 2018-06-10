@@ -51,7 +51,7 @@ public class Util {
 			System.out.println(text);
 	}
 	
-	static List<String> getIds(List<Instance> instances) {
+	static List<String> getInstanceIds(List<Instance> instances) {
 		List<String> ids = new ArrayList<>();
 		
 		for (Instance instance : instances)

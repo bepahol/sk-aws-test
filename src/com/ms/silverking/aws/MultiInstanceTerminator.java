@@ -3,6 +3,7 @@ package com.ms.silverking.aws;
 import static com.ms.silverking.aws.Util.debugPrint;
 import static com.ms.silverking.aws.Util.deleteKeyPair;
 import static com.ms.silverking.aws.Util.getIps;
+import static com.ms.silverking.aws.Util.getInstanceIds;
 import static com.ms.silverking.aws.Util.isKeyPair;
 import static com.ms.silverking.aws.Util.isRunning;
 import static com.ms.silverking.aws.Util.newKeyName;
@@ -77,7 +78,7 @@ public class MultiInstanceTerminator {
 		for (String ip : ips)
 			System.out.println("    " + ip);
 		TerminateInstancesRequest terminateInstancesRequest = new TerminateInstancesRequest();
-		terminateInstancesRequest.withInstanceIds( Util.getIds(instances) );
+		terminateInstancesRequest.withInstanceIds( getInstanceIds(instances) );
 		
 		TerminateInstancesResult result = ec2.terminateInstances(terminateInstancesRequest);
 		workerInstances = result.getTerminatingInstances();
