@@ -234,7 +234,8 @@ public class MultiInstanceLauncher {
 		                   .withMinCount(1)
 		                   .withMaxCount(numInstances)
 		                   .withKeyName(newKeyName)
-		                   .withSecurityGroups( getNames(securityGroups) )
+//		               	if you try to use .withSecurityGroups AND .withSubnetId, you will get Exception in thread "main" com.amazonaws.services.ec2.model.AmazonEC2Exception: The parameter groupName cannot be used with the parameter subnet (Service: AmazonEC2; Status Code: 400; Error Code: InvalidParameterCombination; Request ID: a230cc97-c84b-4253-bdf0-874c68759efd)
+//		                   .withSecurityGroups( getNames(securityGroups) )
 		                   .withSubnetId(subnetId);
 				
 		RunInstancesResult result = ec2.runInstances(runInstancesRequest);
