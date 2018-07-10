@@ -47,11 +47,11 @@ public class SimpleApp {
 " > ~/spark-2.3.1-bin-hadoop2.7/src/main/java/SimpleApp.java
 
 echo "
-/* SimpleApp.java */
+/* SimpleAppSkfs.java */
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.Dataset;
 
-public class SimpleApp {
+public class SimpleAppSkfs {
   public static void main(String[] args) {
     String logFile = \"/var/tmp/silverking/skfs/skfs_mnt/skfs/README.md\"; // Should be some file on your system
     SparkSession spark = SparkSession.builder().appName(\"Simple Application\").getOrCreate();
