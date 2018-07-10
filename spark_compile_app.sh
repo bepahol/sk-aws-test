@@ -69,6 +69,7 @@ public class SimpleApp {
 
 cp ~/spark-2.3.1-bin-hadoop2.7/README.md /var/tmp/silverking/skfs/skfs_mnt/skfs/README.md
 
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0
 cd ~/spark-2.3.1-bin-hadoop2.7/
 mvn package
 
