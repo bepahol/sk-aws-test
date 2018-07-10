@@ -30,14 +30,15 @@ function f_spark_scp_helper {
 
 print "PREPPING MASTER MACHINE"
 # f_spark_downloadSpark
-# export JAVA_HOME=/usr/lib/jvm/java-1.8.0
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0
 ~/spark-2.3.1-bin-hadoop2.7/sbin/start-master.sh
 
+print
 print "PREPPING SLAVE MACHINES"
 cp ~/SilverKing/build/aws/multi_nonlaunch_machines_list.txt ~/spark-2.3.1-bin-hadoop2.7/conf/slaves
-# echo "export JAVA_HOME=/usr/lib/jvm/java-1.8.0" > ~/spark-2.3.1-bin-hadoop2.7/conf/spark-env.sh
+echo "export JAVA_HOME=/usr/lib/jvm/java-1.8.0" > ~/spark-2.3.1-bin-hadoop2.7/conf/spark-env.sh
 # f_spark_downloadSparkOnSlaves
-# f_spark_scpEnvToSlaves
+f_spark_scpEnvToSlaves
 ~/spark-2.3.1-bin-hadoop2.7/sbin/start-slaves.sh
 
 
