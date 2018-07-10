@@ -4,6 +4,7 @@ cd `dirname $0`
 
 if [[ -z $1 ]] ; then
     echo "USAGE: $0 <local|spark-url>"
+    exit 1
 fi
 
 if [[ $1 == "local" ]] ; then
