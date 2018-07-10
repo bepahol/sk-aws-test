@@ -25,7 +25,7 @@ function f_spark_scp_helper {
     while read host; do
         echo -n "$host: "
         scp -o StrictHostKeyChecking=no $file $USER@$host:$destDir
-    done < $NONLAUNCH_HOST_LIST_FILENAME
+    done < ~/spark-2.3.1-bin-hadoop2.7/conf/slaves
 }
 
 print "PREPPING MASTER MACHINE"
