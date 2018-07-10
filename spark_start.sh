@@ -1,5 +1,7 @@
 #!/bin/ksh
 
+cd `dirname $0`
+
 function f_spark_downloadSpark {
     cd ~
     wget http://mirror.cc.columbia.edu/pub/software/apache/spark/spark-2.3.1/spark-2.3.1-bin-hadoop2.7.tgz

@@ -1,5 +1,7 @@
 #!/bin/ksh
 
+cd `dirname $0`
+
 echo "
 <project>
   <groupId>edu.berkeley</groupId>
